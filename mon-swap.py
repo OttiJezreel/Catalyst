@@ -8,12 +8,14 @@ with open("settings.toml", "r") as file:
     config = toml.load(file)
 
 PRIVATE_KEY = config["settings"]["private_key"]
+if PRIVATE_KEY:
+    continue 
+else:
+    print("Private Key not Found, Please Edit in Settings.toml")
 
-# Configuration
 MONAD_RPC_URL = "https://testnet-rpc.monad.xyz"
 CHAIN_ID = 10143
 
-# Router options
 ROUTER_OPTIONS = {
     1: ("Octoswap", "0xb6091233aAcACbA45225a2B2121BBaC807aF4255"),
     2: ("Mondafund", "0xc80585f78A6e44fb46e1445006f820448840386e"),
@@ -21,7 +23,6 @@ ROUTER_OPTIONS = {
     4: ("Monad Madness", "0x64Aff7245EbdAAECAf266852139c67E4D8DBa4de")
 }
 
-# Select router
 print("Select a router:")
 for num, (name, _) in ROUTER_OPTIONS.items():
     print(f"{num}. {name}")
@@ -35,12 +36,10 @@ except ValueError:
     print("Please enter a valid number.")
     exit()
 
-# Contract addresses
 WMON_ADDRESS = "0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701"
 USDT_ADDRESS = "0x88b8E2161DEDC77EF4ab7585569D2415a1C1055D"
 USDC_ADDRESS = "0xf817257fed379853cDe0fa4F97AB987181B1E5Ea"
 
-# Token symbols and addresses
 TOKENS = {
     "MON": "0x0000000000000000000000000000000000000000",  # Gas token (ETH)
     "wMON": WMON_ADDRESS,
@@ -48,16 +47,13 @@ TOKENS = {
     "USDC": USDC_ADDRESS
 }
 
-# Connect to Monad Testnet
 w3 = Web3(Web3.HTTPProvider(MONAD_RPC_URL))
 if not w3.is_connected():
     print("Failed to connect to Monad Testnet")
     exit()
 
-# Account setup
 account = w3.eth.account.from_key(PRIVATE_KEY)
 
-# ABIs
 ROUTER_ABI = json.loads('''
 [
     {
@@ -165,7 +161,6 @@ ERC20_ABI = json.loads('''
 ]
 ''')
 
-# Contract instances
 router_contract = w3.eth.contract(address=ROUTER_ADDRESS, abi=ROUTER_ABI)
 wmon_deposit_contract = w3.eth.contract(address=WMON_ADDRESS, abi=WMON_ABI)
 token_contracts = {
@@ -174,20 +169,17 @@ token_contracts = {
     "USDC": w3.eth.contract(address=USDC_ADDRESS, abi=ERC20_ABI)
 }
 
-# Fetch decimals for each token
 token_decimals = {}
-token_decimals["MON"] = 18  # Native token has 18 decimals
+token_decimals["MON"] = 18 
 for token, contract in token_contracts.items():
     token_decimals[token] = contract.functions.decimals().call()
 
-# Gas settings
 GAS_PRICE = w3.to_wei(52, "gwei")
 GAS_LIMIT_APPROVE = 50000
 GAS_LIMIT_SWAP = 160000
 GAS_LIMIT_DEPOSIT = 30000
-GAS_LIMIT_WITHDRAW = 40000  # Same as deposit for simplicity
+GAS_LIMIT_WITHDRAW = 40000 
 
-# Helper functions
 def get_balances():
     balances = {}
     balances["MON"] = w3.eth.get_balance(account.address) / (10 ** token_decimals["MON"])
@@ -199,10 +191,8 @@ def get_balances():
 def get_deadline():
     return int(time.time()) + 600
 
-# Token list for user selection
 token_list = ["MON", "wMON", "USDT", "USDC"]
 
-# Main loop
 nonce = w3.eth.get_transaction_count(account.address)
 while True:
     balances = get_balances()
@@ -210,7 +200,6 @@ while True:
     for token in token_list:
         print(f"{token}: {balances[token]:.4f}")
 
-    # Select token to swap from
     while True:
         print("\nSelect token to swap from:")
         for i, token in enumerate(token_list, 1):
@@ -225,7 +214,6 @@ while True:
         except ValueError:
             print("Please enter a valid number.")
 
-    # Select token to swap to
     while True:
         print("\nSelect token to swap to:")
         for i, token in enumerate(token_list, 1):
@@ -261,25 +249,21 @@ while True:
         print("Amount must be a number.")
         continue
 
-    # Handle swap logic
     if from_token == "MON" and to_token == "wMON":
-        # Wrap MON to wMON using deposit()
         function = wmon_deposit_contract.functions.deposit()
         value = int(amount * (10 ** token_decimals["MON"]))
         gas = GAS_LIMIT_DEPOSIT
     elif from_token == "wMON" and to_token == "MON":
-        # Unwrap wMON to MON using withdraw()
         function = wmon_deposit_contract.functions.withdraw(
             int(amount * (10 ** token_decimals["wMON"]))
         )
         value = 0
         gas = GAS_LIMIT_WITHDRAW
     else:
-        # Determine swap function and path
         if from_token == "MON":
             path = [WMON_ADDRESS, TOKENS[to_token]]
             function = router_contract.functions.swapExactETHForTokens(
-                0,  # amountOutMin
+                0,
                 path,
                 account.address,
                 get_deadline()
@@ -307,8 +291,7 @@ while True:
             value = 0
         gas = GAS_LIMIT_SWAP
 
-        # Approve token if not MON
-        if from_token != "MON" and to_token != "MON":  # No approval needed for unwrap
+        if from_token != "MON" and to_token != "MON": 
             approve_function = token_contracts[from_token].functions.approve(
                 ROUTER_ADDRESS, 2**256 - 1
             )
@@ -325,7 +308,6 @@ while True:
             w3.eth.wait_for_transaction_receipt(tx_hash)
             nonce += 1
 
-    # Build and send transaction
     tx = function.build_transaction({
         "from": account.address,
         "value": value,
@@ -344,7 +326,6 @@ while True:
         print("Transaction failed")
     nonce += 1
 
-    # Ask to continue or quit
     choice = input("Enter 'q' to quit or any other key to continue: ").lower()
     if choice == "q":
         break
