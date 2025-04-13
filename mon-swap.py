@@ -14,7 +14,7 @@ while True:
         break
     else:
         print("Private Key not Found, Please Edit in Settings.toml")
-        return
+        break
 
 MONAD_RPC_URL = "https://testnet-rpc.monad.xyz"
 CHAIN_ID = 10143
