@@ -11,8 +11,8 @@ PRIVATE_KEY = config["settings"]["private_key"]
 if PRIVATE_KEY:
     print("setting account")
 else:
-    print("Private Key not Found, Please Edit in Settings.toml")
     break
+    print("Private Key not Found, Please Edit in Settings.toml")   
 
 MONAD_RPC_URL = "https://testnet-rpc.monad.xyz"
 CHAIN_ID = 10143
