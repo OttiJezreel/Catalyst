@@ -8,11 +8,13 @@ with open("settings.toml", "r") as file:
     config = toml.load(file)
 
 PRIVATE_KEY = config["settings"]["private_key"]
-if PRIVATE_KEY:
-    print("setting account")
-else:
-    break
-    print("Private Key not Found, Please Edit in Settings.toml")   
+while True:
+    if PRIVATE_KEY:
+        print("setting account")
+        break
+    else:
+        print("Private Key not Found, Please Edit in Settings.toml")
+        return
 
 MONAD_RPC_URL = "https://testnet-rpc.monad.xyz"
 CHAIN_ID = 10143
