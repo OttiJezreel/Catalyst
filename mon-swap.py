@@ -299,7 +299,7 @@ while True:
                 "chainId": CHAIN_ID
             })
             signed_approve_tx = account.sign_transaction(approve_tx)
-            tx_hash = w3.eth.send_raw_transaction(signed_approve_tx.rawTransaction)
+            tx_hash = w3.eth.send_raw_transaction(signed_approve_tx.raw_transaction)
             print(f"Approval transaction sent: {tx_hash.hex()}")
             w3.eth.wait_for_transaction_receipt(tx_hash)
             nonce += 1
@@ -313,7 +313,7 @@ while True:
         "chainId": CHAIN_ID
     })
     signed_tx = account.sign_transaction(tx)
-    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
     print(f"Transaction sent: {tx_hash.hex()}")
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
     if receipt.status == 1:
